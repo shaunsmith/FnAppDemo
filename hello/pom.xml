@@ -7,6 +7,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <fdk.version>1.0.48</fdk.version>
     </properties>
+    <description>Hello World Java Fn Sample</description>
     <groupId>com.example.fn</groupId>
     <artifactId>hello</artifactId>
     <version>1.0.0</version>
