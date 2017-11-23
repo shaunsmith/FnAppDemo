@@ -1,0 +1,61 @@
+build:
+  box: busybox
+  steps:
+    - script:
+        name: noop
+        code: echo "Building app"
+        
+fn-build-java:
+   box:
+      id: fnproject/fn-java-fdk-build:1.0.47
+   steps:
+     - script:
+         name: build java
+         code: |
+          cd $FUNC_NAME
+          mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
+          echo "output dir: $WERCKER_OUTPUT_DIR"
+          mkdir -p $WERCKER_OUTPUT_DIR/
+          cp target/*.jar $WERCKER_OUTPUT_DIR/
+
+fn-push-java:
+   box:
+      id: fnproject/fn-java-fdk:1.0.47
+      entrypoint: /bin/sh -c /bin/bash
+   steps:
+     - script:
+            name: copy artifacts
+            code: |
+              mkdir -p /function/app/
+              mv *.jar /function/app/
+              touch file
+     - internal/docker-push:
+            repository: $DOCKER_REPO/$FUNC_NAME
+            registry: $DOCKER_REGISTRY
+            username: $DOCKER_USERNAME
+            password: $DOCKER_PASSWORD
+            tag: $WERCKER_GIT_COMMIT
+            entrypoint: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
+            cmd: $ENTRYPOINT
+
+
+fn-route-update:
+   box: oraclelinux:7-slim
+   steps:
+     - script:
+         name: update route
+         code: |
+          echo "FN_APP: ${FN_APP}"
+          echo "FUNC_NAME: ${FUNC_NAME}"
+          echo "DOCKER_REPO: ${DOCKER_REPO}"
+          echo "WERCKER_GIT_COMMIT: ${WERCKER_GIT_COMMIT}"
+          echo "FN_SERVER: ${FN_SERVER}"
+          curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
+          chmod +x ./fn
+          export API_URL=$FN_SERVER
+          ./fn apps create $FN_APP && echo "Creating app '${FN_APP}' if it doesn't exist."
+          if !(./fn routes update $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$WERCKER_GIT_COMMIT) ; then
+             ./fn routes create $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$WERCKER_GIT_COMMIT
+          fi
+
+
