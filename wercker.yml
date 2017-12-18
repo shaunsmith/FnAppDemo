@@ -29,8 +29,11 @@ fn-push-java:
               mkdir -p /function/app/
               mv *.jar /function/app/
               touch file
+              echo "repository: $DOCKER_REPO/$FUNC_NAME"
+              echo "username: $DOCKER_USERNAME"
+              echo "tag: $WERCKER_GIT_COMMIT"
      - internal/docker-push:
-            registry: $DOCKER_REGISTRY
+            repository: $DOCKER_REPO/$FUNC_NAME
             username: $DOCKER_USERNAME
             password: $DOCKER_PASSWORD
             tag: $WERCKER_GIT_COMMIT
