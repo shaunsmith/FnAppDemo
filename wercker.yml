@@ -30,7 +30,6 @@ fn-push-java:
               mv *.jar /function/app/
               touch file
      - internal/docker-push:
-            repository: $DOCKER_REPO/$FUNC_NAME
             registry: $DOCKER_REGISTRY
             username: $DOCKER_USERNAME
             password: $DOCKER_PASSWORD
