@@ -3,9 +3,7 @@ build:
   steps:
     - script:
         name: noop
-        code: |
-         echo "Building app"
-         export FUNC_VERSION=9.9.9
+        code: echo "Building app"
         
 fn-build-java:
    box:
@@ -15,7 +13,6 @@ fn-build-java:
          name: build java
          code: |
           cd $FUNC_NAME
-          echo "Func version: ${FUNC_VERSION}"
           mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
           mkdir -p $WERCKER_OUTPUT_DIR/
           cp target/*.jar $WERCKER_OUTPUT_DIR/
@@ -31,11 +28,12 @@ fn-push-java:
               mkdir -p /function/app/
               mv *.jar /function/app/
               touch file
+              export FUNC_VERSION=9.9.9
      - internal/docker-push:
             repository: $DOCKER_REPO/$FUNC_NAME
             username: $DOCKER_USERNAME
             password: $DOCKER_PASSWORD
-            tag: $WERCKER_GIT_COMMIT
+            tag: $FUNC_VERSION
             entrypoint: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
             cmd: $ENTRYPOINT
 
