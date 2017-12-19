@@ -5,6 +5,7 @@ build:
         name: noop
         code: echo "Building app"
         
+        
 fn-build-java:
    box:
       id: fnproject/fn-java-fdk-build:1.0.47
@@ -12,10 +13,10 @@ fn-build-java:
      - script:
          name: build java
          code: |
-          cd $FUNC_NAME
+          cd ${FUNC_NAME}
           mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
-          mkdir -p $WERCKER_OUTPUT_DIR/
-          cp target/*.jar $WERCKER_OUTPUT_DIR/
+          mkdir -p ${WERCKER_OUTPUT_DIR}/
+          cp target/*.jar ${WERCKER_OUTPUT_DIR}/
 
 fn-push-java:
    box:
@@ -24,18 +25,18 @@ fn-push-java:
    steps:
      - script:
             name: copy artifacts
-            code: |
+            code: | 
               mkdir -p /function/app/
               mv *.jar /function/app/
               touch file
               echo -n "export " > version.sh
-              cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
+              cat ${FUNC_NAME}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
               source version.sh
               echo "Pushing function version: ${version}"
      - internal/docker-push:
-            repository: $DOCKER_REPO/$FUNC_NAME
-            username: $DOCKER_USERNAME
-            password: $DOCKER_PASSWORD
+            repository: ${DOCKER_REPO}/${FUNC_NAME}
+            username: ${DOCKER_USERNAME}
+            password: ${DOCKER_PASSWORD}
             tag: $version
             entrypoint: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
             cmd: $ENTRYPOINT
@@ -47,11 +48,9 @@ fn-route-update:
      - script:
          name: update route
          code: |
-          pwd
-          env
-          cat func.yaml
+          cat ${FUNC_NAME}/func.yaml
           echo -n "export " > version.sh
-          cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
+          cat ${FUNC_NAME}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
           source version.sh
           echo "Updating route ${FN_APP} /${FUNC_NAME} to version: ${version}"
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
