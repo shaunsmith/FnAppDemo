@@ -3,7 +3,9 @@ build:
   steps:
     - script:
         name: noop
-        code: echo "Building app"
+        code: |
+         echo "Building app"
+         export FUNC_VERSION=9.9.9
         
 fn-build-java:
    box:
@@ -13,8 +15,8 @@ fn-build-java:
          name: build java
          code: |
           cd $FUNC_NAME
+          echo "Func version: ${FUNC_VERSION}"
           mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
-          echo "output dir: $WERCKER_OUTPUT_DIR"
           mkdir -p $WERCKER_OUTPUT_DIR/
           cp target/*.jar $WERCKER_OUTPUT_DIR/
 
@@ -29,9 +31,6 @@ fn-push-java:
               mkdir -p /function/app/
               mv *.jar /function/app/
               touch file
-              echo "repository: $DOCKER_REPO/$FUNC_NAME"
-              echo "username: $DOCKER_USERNAME"
-              echo "tag: $WERCKER_GIT_COMMIT"
      - internal/docker-push:
             repository: $DOCKER_REPO/$FUNC_NAME
             username: $DOCKER_USERNAME
@@ -47,11 +46,6 @@ fn-route-update:
      - script:
          name: update route
          code: |
-          echo "FN_APP: ${FN_APP}"
-          echo "FUNC_NAME: ${FUNC_NAME}"
-          echo "DOCKER_REPO: ${DOCKER_REPO}"
-          echo "WERCKER_GIT_COMMIT: ${WERCKER_GIT_COMMIT}"
-          echo "FN_SERVER: ${FN_SERVER}"
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
           chmod +x ./fn
           export API_URL=$FN_SERVER
