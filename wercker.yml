@@ -46,12 +46,15 @@ fn-route-update:
      - script:
          name: update route
          code: |
+          echo -n "export " > version.sh
+          cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
+          source version.sh
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
           chmod +x ./fn
           export API_URL=$FN_SERVER
           ./fn apps create $FN_APP && echo "Creating app '${FN_APP}' if it doesn't exist."
-          if !(./fn routes update $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$WERCKER_GIT_COMMIT) ; then
-             ./fn routes create $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$WERCKER_GIT_COMMIT
+          if !(./fn routes update $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$version) ; then
+             ./fn routes create $FN_APP /$FUNC_NAME --image $DOCKER_REPO/$FUNC_NAME:$version
           fi
 
 
