@@ -17,6 +17,7 @@ fn-build-java:
           mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
           mkdir -p ${WERCKER_OUTPUT_DIR}/
           cp target/*.jar ${WERCKER_OUTPUT_DIR}/
+          cp func.yaml ${WERCKER_OUTPUT_DIR}/
 
 fn-push-java:
    box:
@@ -30,7 +31,7 @@ fn-push-java:
               mv *.jar /function/app/
               touch file
               echo -n "export " > version.sh
-              cat ${FUNC_NAME}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
+              cat ${WERCKER_OUTPUT_DIR}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
               source version.sh
               echo "Pushing function version: ${version}"
      - internal/docker-push:
@@ -48,9 +49,9 @@ fn-route-update:
      - script:
          name: update route
          code: |
-          cat ${FUNC_NAME}/func.yaml
+          cat ${WERCKER_OUTPUT_DIR}/func.yaml
           echo -n "export " > version.sh
-          cat ${FUNC_NAME}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
+          cat ${WERCKER_OUTPUT_DIR}/func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
           source version.sh
           echo "Updating route ${FN_APP} /${FUNC_NAME} to version: ${version}"
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
