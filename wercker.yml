@@ -52,7 +52,7 @@ fn-push-java:
             password: ${DOCKER_PASSWORD}
             tag: $version
             entrypoint: /usr/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
-            cmd: $ENTRYPOINT
+            cmd: ${cmd}
 
 
 fn-route-update:
