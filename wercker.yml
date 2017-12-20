@@ -53,7 +53,7 @@ fn-route-update:
           echo -n "export " > version.sh
           cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
           source version.sh
-          echo "Updating route ${FN_APP} /${FUNC_NAME} to version: ${version}"
+          echo "Updating route ${FN_APP} /${FUNC_NAME} to ${DOCKER_REPO}/${FUNC_NAME}:${version}"
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
           chmod +x ./fn
           export API_URL=${FN_SERVER}
