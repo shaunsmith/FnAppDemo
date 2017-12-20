@@ -8,7 +8,7 @@ build:
         
 fn-build-java:
    box:
-      id: fnproject/fn-java-fdk-build:1.0.47
+      id: fnproject/fn-java-fdk-build:1.0.55
    steps:
      - script:
          name: build java
@@ -21,7 +21,7 @@ fn-build-java:
 
 fn-push-java:
    box:
-      id: fnproject/fn-java-fdk:1.0.47
+      id: fnproject/fn-java-fdk:1.0.55
       entrypoint: /bin/sh -c /bin/bash
    steps:
      - script:
