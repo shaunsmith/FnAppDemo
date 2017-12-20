@@ -46,6 +46,7 @@ fn-push-java:
               mv *.jar /function/app/
               source funcvars.sh
               echo "Pushing function version: ${version}"
+              echo "cmd: ${cmd}"
      - internal/docker-push:
             repository: ${DOCKER_REPO}/${FUNC_NAME}
             username: ${DOCKER_USERNAME}
