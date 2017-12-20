@@ -45,17 +45,17 @@ fn-push-java:
               mkdir -p /function/app/
               mv *.jar /function/app/
               source funcvars.sh
-              export version=${version}
-              export cmd=${cmd}
-              echo "Pushing function version: ${version}"
-              echo "Function entry point: ${cmd}"
+              export FUNC_VERSION=${version}
+              export ENTRY_POINT=${cmd}
+              echo "Pushing function version: ${FUNC_VERSION}"
+              echo "Function entry point: ${ENTRY_POINT}"
      - internal/docker-push:
             repository: ${DOCKER_REPO}/${FUNC_NAME}
             username: ${DOCKER_USERNAME}
             password: ${DOCKER_PASSWORD}
-            tag: ${version}
+            tag: ${FUNC_VERSION}
             entrypoint: /usr/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
-            cmd: ${cmd}
+            cmd: ${ENTRY_POINT}
 
 
 fn-route-update:
