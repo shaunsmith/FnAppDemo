@@ -17,8 +17,23 @@ fn-build-java:
           mvn  package  dependency:copy-dependencies -DincludeScope=runtime -DskipTests=true -Dmdep.prependGroupId=true -DoutputDirectory=target
           mkdir -p ${WERCKER_OUTPUT_DIR}/
           cp target/*.jar ${WERCKER_OUTPUT_DIR}/
-          cp func.yaml ${WERCKER_OUTPUT_DIR}
-
+          function parse_yaml {
+            local prefix=$2
+            local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+            sed -ne "s|^\($s\):|\1|" \
+                  -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+                  -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+            awk -F$fs '{
+                indent = length($1)/2;
+                vname[indent] = $2;
+                for (i in vname) {if (i > indent) {delete vname[i]}}
+                if (length($3) > 0) {
+                  vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+                  printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+                }
+            }'
+          }
+          parse_yaml func.yaml > ${WERCKER_OUTPUT_DIR}/funcvars.sh
 fn-push-java:
    box:
       id: fnproject/fn-java-fdk:1.0.55
@@ -29,17 +44,14 @@ fn-push-java:
             code: | 
               mkdir -p /function/app/
               mv *.jar /function/app/
-              touch file
-              echo -n "export " > version.sh
-              cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
-              source version.sh
+              source funcvars.sh
               echo "Pushing function version: ${version}"
      - internal/docker-push:
             repository: ${DOCKER_REPO}/${FUNC_NAME}
             username: ${DOCKER_USERNAME}
             password: ${DOCKER_PASSWORD}
             tag: $version
-            entrypoint: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
+            entrypoint: /usr/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 -XX:+UseSerialGC -Xshare:on -cp /function/app/*:/function/runtime/* com.fnproject.fn.runtime.EntryPoint
             cmd: $ENTRYPOINT
 
 
@@ -49,10 +61,8 @@ fn-route-update:
      - script:
          name: update route
          code: |
-          cat func.yaml
-          echo -n "export " > version.sh
-          cat func.yaml | grep version | sed -e 's/:[^:\/\/]/="/g;s/$/"/g;s/ *=/=/g' >> version.sh
-          source version.sh
+          cat funcvars.sh
+          source funcvars.sh
           echo "Updating route ${FN_APP} /${FUNC_NAME} to ${DOCKER_REPO}/${FUNC_NAME}:${version}"
           curl -L -o ./fn https://github.com/fnproject/cli/releases/download/0.4.17/fn_linux
           chmod +x ./fn
